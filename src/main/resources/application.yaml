@@ -1,3 +1,11 @@
 spring:
   application:
     name: pint-backend
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/pint_db
+    username: jskt
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true

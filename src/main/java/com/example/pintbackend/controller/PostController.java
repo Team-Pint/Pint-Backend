@@ -13,20 +13,30 @@ package com.example.pintbackend.controller;
 import com.example.pintbackend.domain.Image;
 import com.example.pintbackend.service.ImageService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 
 @RestController
-@RequestMapping("/images")
+@RequestMapping("/posts")
 @RequiredArgsConstructor
-public class ImageController {
+public class PostController {
     private final ImageService imageService;
+
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+
+    public Image createPost(@RequestParam("image") MultipartFile file) throws IOException {
+        return imageService.createImage(file);
+    }
+
 
     @GetMapping("/{id}")
     public Image getImageById(@PathVariable Long id) {
         Image image = imageService.getImage(id);
         return imageService.getImage(id);
     }
+
+
 }
