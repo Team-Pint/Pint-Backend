@@ -1,0 +1,28 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main    # deploy branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest    # downloads the repo into Github runner (github  temp server)
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action   # github user who created and maintains the github Action
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script:
+            cd Pint-Backend
+            git pull
+            ./gradlew build
+            docker-compose down
+            docker-compose up -d --build
+
