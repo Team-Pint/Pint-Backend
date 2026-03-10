@@ -10,14 +10,13 @@
 
 package com.example.pintbackend.controller;
 
-import com.example.pintbackend.domain.Image;
 import com.example.pintbackend.dto.common.response.BaseResponse;
-import com.example.pintbackend.service.s3service.ImageService;
+import com.example.pintbackend.dto.postDto.CreatePostRequest;
+import com.example.pintbackend.service.PostService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 
@@ -25,17 +24,15 @@ import java.io.IOException;
 @RequestMapping("/posts")
 @RequiredArgsConstructor
 public class PostController {
-    private final ImageService imageService;
+
+    private final PostService postService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<BaseResponse<?>> createPost(
-            @RequestParam("image") MultipartFile imageFile,
-            @RequestParam("filter") MultipartFile filterFile,
-            @RequestParam("location") String location,
-            @RequestParam("description") String description) throws IOException {
+    public ResponseEntity<BaseResponse<?>> createPost(@ModelAttribute CreatePostRequest request) throws IOException {
 
+        postService.createPost(request);
 
-        return ResponseEntity.ok(BaseResponse.success(""));
+        return ResponseEntity.ok(BaseResponse.success("포스트 가 작성되였습니다!"));
     }
 
 

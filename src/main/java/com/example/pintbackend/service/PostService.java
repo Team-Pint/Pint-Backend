@@ -17,6 +17,7 @@ import com.example.pintbackend.dto.postDto.PostResponse;
 import com.example.pintbackend.repository.PostRepository;
 import com.example.pintbackend.service.s3service.S3Service;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.type.TrueFalseConverter;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -39,23 +40,29 @@ public class PostService {
     public PostResponse createPost(CreatePostRequest request) throws IOException {
 
         // s3key -> actual image url
-        String imageKey = s3Service.uploadFile(request.getImage());
+        try {
+            String imageKey = s3Service.uploadFile(request.getImage());
+            String fileKey = s3Service.uploadFile(request.getFilter());
+            // DTO->Create
+            Post post = Post.builder()
+                    .description(request.getDescription())
+                    .location(request.getLocation())
+                    .imageFileS3Key(imageKey)
+                    .filterFileS3Key(fileKey)
+                    .createdAt(LocalDateTime.now())
+                    .build();
 
-        // DTO->Create
-        Post post = Post.builder()
-                .description(request.getDescription())
-                .location(request.getLocation())
-                .imageFileS3Key(imageKey)
-                .createdAt(LocalDateTime.now())
-                .build();
+            // DB에 저장하기
+            Post saved = postRepository.save(post);
 
-        // DB에 저장하기
-        Post saved = postRepository.save(post);
+            // presigned url
+            String imageUrl = s3Service.getPresignedUrlToRead(saved.getImageFileS3Key());
+            return PostResponse.from(saved, imageUrl);
 
-        // presigned url
-        String imageUrl = s3Service.getPresignedUrlToRead(saved.getImageFileS3Key());
+        } catch (IOException e) {
+            throw new RuntimeException("ERROR: S3에 업로드를 실패했습니다");
+        }
 
-        return PostResponse.from(saved, imageUrl);
     }
 
     /**
@@ -65,7 +72,6 @@ public class PostService {
     public List<PostImageResponse> getAllPost() {
 
         List<Post> posts = postRepository.findAll();
-
         return PostImageResponse.fromList(posts, s3Service);
     }
 
