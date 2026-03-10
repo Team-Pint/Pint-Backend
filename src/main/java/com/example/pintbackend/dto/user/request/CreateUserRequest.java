@@ -1,4 +1,4 @@
-package com.example.pintbackend.dto.post.request;
+package com.example.pintbackend.dto.user.request;
 
 import com.example.pintbackend.domain.user.entity.User;
 import jakarta.validation.constraints.NotBlank;
