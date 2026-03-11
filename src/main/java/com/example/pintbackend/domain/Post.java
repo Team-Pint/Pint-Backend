@@ -46,6 +46,9 @@ public class Post extends BaseEntity {
 
     // 수정 method in post entity
     public void update(String description, String location, String imageFileS3Key, String filterFileS3Key) {
+        /**
+         * 수정된 필드들만 바꾸기
+         */
         if (description != null) this.description = description;
         if (location != null) this.location = location;
         if (imageFileS3Key != null) this.imageFileS3Key = imageFileS3Key;
