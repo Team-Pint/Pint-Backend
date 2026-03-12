@@ -12,6 +12,7 @@ package com.example.pintbackend.service;
 
 import com.example.pintbackend.domain.Post;
 import com.example.pintbackend.domain.user.entity.User;
+import com.example.pintbackend.domain.user.exception.UserNotFoundException;
 import com.example.pintbackend.dto.XmpAnalysisResponse;
 import com.example.pintbackend.dto.postDto.CreatePostRequest;
 import com.example.pintbackend.dto.postDto.PostImageResponse;
@@ -53,8 +54,11 @@ public class PostService {
      *
      */
     @Transactional
-    public void createPost(CreatePostRequest request) throws IOException {
-        User user = getAuthenticatedUser();
+    public void createPost(CreatePostRequest request, Authentication authentication) throws IOException {
+        String userEmail = authentication.getName();
+        User user = userRepository.findByEmail(userEmail).orElseThrow(
+            () -> new UserNotFoundException(userEmail)
+        );
 
         // camera info
         ImageMetadata meta = imageMetadataService.extract(request.getImage());
