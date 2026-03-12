@@ -12,6 +12,7 @@
 package com.example.pintbackend.domain;
 
 import com.example.pintbackend.domain.common.BaseEntity;
+import com.sun.jdi.LongType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -37,6 +38,12 @@ public class Post extends BaseEntity {
 
     @Column
     private String camera;
+
+    @Column
+    private Long width;
+
+    @Column
+    private Long height;
 
     @Column(name = "image", nullable = false)
     private String imageFileS3Key;
