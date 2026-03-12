@@ -5,6 +5,7 @@ import com.example.pintbackend.domain.user.exception.DuplicateEmailException;
 import com.example.pintbackend.domain.user.exception.UserNotFoundException;
 import com.example.pintbackend.dto.user.request.LoginUserRequest;
 import com.example.pintbackend.repository.UserRepository;
+import com.example.pintbackend.service.s3service.S3Service;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,7 @@ public class UserService {
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
   private final AuthenticationManager authenticationManager;
+  private final S3Service s3Service;
 
   // 회원가입 - 기본 제공 save 사용
   @Transactional
@@ -43,7 +45,7 @@ public class UserService {
   }
 
   @Transactional
-  public Long login(LoginUserRequest request, HttpServletRequest httpRequest) {
+  public void login(LoginUserRequest request, HttpServletRequest httpRequest) {
     // 1. 유저 인증 시도
     Authentication authentication = authenticationManager.authenticate(
         new UsernamePasswordAuthenticationToken(request.email(), request.password())
@@ -63,8 +65,6 @@ public class UserService {
     );
 
     // 서블릿 컨테이너가 자동으로 쿠키에 "JSESSIONID"를 설정.
-
-    return getUserId(request.email());
   }
 
   private Long getUserId(String email) {
@@ -94,5 +94,19 @@ public class UserService {
         .path("/")
         .maxAge(0)  // 세션 즉시 만료
         .build();
+  }
+
+  public String getProfileImg(String email) {
+    User user = userRepository.findByEmail(email).orElseThrow(
+        () -> new UserNotFoundException(email)
+    );
+
+    String profileImageKey = user.getProfileImageS3Key();
+    log.info("profileImageKey = {}", profileImageKey);
+    String profileImgUrl = "";
+    if(profileImageKey != null) {
+      profileImgUrl = s3Service.getPresignedUrlToRead(profileImageKey);
+    }
+    return profileImgUrl;
   }
 }
