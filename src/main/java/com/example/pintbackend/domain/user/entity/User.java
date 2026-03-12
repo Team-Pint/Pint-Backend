@@ -42,7 +42,7 @@ public class User extends BaseEntity {
 
   @Builder
   private User(String email, String password, String userName, String city, String introduction,
-      String profileImageS3Key, Role role) {
+      String profileImageS3Key) {
     this.email = email;
     this.password = password;
     this.userName = userName;
