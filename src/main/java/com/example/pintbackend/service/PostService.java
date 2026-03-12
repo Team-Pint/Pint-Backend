@@ -17,6 +17,8 @@ import com.example.pintbackend.dto.postDto.PostImageResponse;
 import com.example.pintbackend.dto.postDto.PostResponse;
 import com.example.pintbackend.dto.postDto.UpdatePostRequest;
 import com.example.pintbackend.repository.PostRepository;
+import com.example.pintbackend.service.imageservice.ImageMetadata;
+import com.example.pintbackend.service.imageservice.ImageMetadataService;
 import com.example.pintbackend.service.s3service.S3Service;
 import com.example.pintbackend.service.s3service.XmpAnalysisService;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +39,7 @@ public class PostService {
     private final PostRepository postRepository;
     private final S3Service s3Service;
     private final XmpAnalysisService xmpAnalysisService;
+    private final ImageMetadataService imageMetadataService;
 
     /**
      * create post
@@ -45,6 +48,9 @@ public class PostService {
      */
     @Transactional
     public void createPost(CreatePostRequest request) throws IOException {
+
+        // camera info
+        ImageMetadata meta = imageMetadataService.extract(request.getImage());
 
         // key -> actual image url
         String imageKey = s3Service.uploadFile(request.getImage());
@@ -56,6 +62,9 @@ public class PostService {
                 .location(request.getLocation())
                 .imageFileS3Key(imageKey)
                 .filterFileS3Key(fileKey)
+                .width(meta.width())
+                .height(meta.height())
+                .camera(meta.camera())
                 .build();
 
         // DB에 저장하기

@@ -29,11 +29,12 @@ public interface PostLikeRepository extends JpaRepository<PostLike, Long> {
             "GROUP BY pl.post.id")
     List<Object[]> countByPostIds(@Param("postsIds") List<Long> postIds);
 
-    @Query("SELECT pl.post.id " +
-            "FROM PostLike pl " +
-            "WHERE pl.post.id " +
-            "IN :postIds " +
-            "AND pl.user = :user")
+    @Query("""
+                    SELECT pl.post.id FROM PostLike pl
+                    WHERE pl.post.id
+                    IN :postIds
+                    AND pl.user = :user
+            """)
     Set<Long> findLikedPostIdsByUser(@Param("postId") List<Long> postIds, @Param("user") User user);
 
 }

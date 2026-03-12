@@ -25,6 +25,7 @@ public class PostImageResponse {
     private Long width;
     private String description;
     private String imageUrl;
+    private String camera;
 
     public static PostImageResponse from(Post post, String imageUrl) {
         return PostImageResponse.builder()
@@ -32,6 +33,7 @@ public class PostImageResponse {
                 .height(post.getHeight())
                 .width(post.getWidth())
                 .description(post.getDescription())
+                .camera(post.getCamera())
                 .imageUrl(imageUrl)
                 .build();
     }

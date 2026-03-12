@@ -14,6 +14,8 @@ package com.example.pintbackend.domain;
 import com.example.pintbackend.domain.common.BaseEntity;
 import com.sun.jdi.LongType;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -31,6 +33,7 @@ public class Post extends BaseEntity {
     private Long id;
 
     @Column(name = "description", nullable = false)
+    @Size(min=4)
     private String description;
 
     @Column(name = "location", nullable = false)

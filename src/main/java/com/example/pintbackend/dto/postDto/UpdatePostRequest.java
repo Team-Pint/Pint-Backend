@@ -24,6 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class UpdatePostRequest {
     private String description;
     private String location;
+    private String camera;
 
     @Schema(type = "string", format = "binary")
     private MultipartFile image;
