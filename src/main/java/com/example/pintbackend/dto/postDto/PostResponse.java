@@ -12,6 +12,7 @@ package com.example.pintbackend.dto.postDto;
 
 import com.example.pintbackend.domain.Post;
 import com.example.pintbackend.dto.XmpAnalysisResponse;
+import com.example.pintbackend.dto.user.CustomUserDetails;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,24 +23,33 @@ import java.time.LocalDateTime;
 @Getter
 @Builder
 @AllArgsConstructor
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class PostResponse {
 
     private Long id;
+
+    // User Info
+    private PostUserInfo userInfo;
+
     private String description;
     private String location;
-    private String imageUrl;     // presigned img URL
+    private String postImgUrl;     // presigned img URL
 
     private XmpAnalysisResponse filter;
     private LocalDateTime createdAt;
 
-    public static PostResponse from(Post post, String imageUrl, XmpAnalysisResponse xmlUrl) {
+    public static PostResponse from(
+        Post post,
+        PostUserInfo postUserInfo,
+        String imageUrl,
+        XmpAnalysisResponse filterInfo
+    ) {
         return PostResponse.builder()
                 .id(post.getId())
+                .userInfo(postUserInfo)
                 .description(post.getDescription())
                 .location(post.getLocation())
-                .imageUrl(imageUrl)
-                .filter(xmlUrl)
+                .postImgUrl(imageUrl)
+                .filter(filterInfo)
                 .createdAt(post.getCreatedAt())
                 .build();
     }

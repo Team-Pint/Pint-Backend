@@ -18,11 +18,9 @@ import com.example.pintbackend.dto.postDto.UpdatePostRequest;
 import com.example.pintbackend.dto.user.CustomUserDetails;
 import com.example.pintbackend.service.PostService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
@@ -58,11 +56,13 @@ public class PostController {
 
     @GetMapping("/{postId}")
     @Operation(summary = "아이디로 포스트 조회")
-    public ResponseEntity<BaseResponse<PostResponse>> getPostById(@PathVariable Long postId) throws IOException {
+    public ResponseEntity<BaseResponse<PostResponse>> getPostById(
+        @PathVariable Long postId,
+        @AuthenticationPrincipal CustomUserDetails userDetails
+    ) throws IOException {
+        PostResponse response = postService.getPostById(postId, userDetails);
 
-        PostResponse post = postService.getPostById(postId);
-
-        return ResponseEntity.ok(BaseResponse.success(post));
+        return ResponseEntity.ok(BaseResponse.success(response));
     }
 
     /**

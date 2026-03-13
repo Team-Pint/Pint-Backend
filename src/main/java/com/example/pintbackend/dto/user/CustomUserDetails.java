@@ -26,12 +26,14 @@ import java.util.List;
 public class CustomUserDetails implements UserDetails {
 
     private final String email;
+    private final Long userId;
     private final String username;
     private final String password;
     private final String profileImageS3Key;
 
     public CustomUserDetails(User user) {
         this.email = user.getEmail();
+        this.userId = user.getId();
         this.username = user.getUsername();
         this.password = user.getPassword();
         this.profileImageS3Key = user.getProfileImageS3Key();
