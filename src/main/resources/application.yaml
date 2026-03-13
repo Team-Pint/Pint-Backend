@@ -27,11 +27,12 @@ spring:
       max-request-size: 10MB
 
 server:
+  forward-headers-strategy: framework
   servlet:
     session:
       cookie:
-        same-site: ${SESSION_COOKIE_SAME_SITE:Lax}
-        secure: ${SESSION_COOKIE_SECURE:false}
+        same-site: ${SESSION_COOKIE_SAME_SITE:None}
+        secure: ${SESSION_COOKIE_SECURE:true}
         http-only: true
 
 cloud:
@@ -51,5 +52,5 @@ management:
       show-details: never
 
 cors:
-  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000, http://localhost:5173, http://localhost:5174}
   allowed-origin-patterns: ${CORS_ALLOWED_ORIGIN_PATTERNS:https://*.vercel.app}

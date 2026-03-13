@@ -32,6 +32,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
@@ -63,11 +64,16 @@ public class PostService {
         () -> new UserNotFoundException(userEmail)
     );
 
+    MultipartFile image = request.getImage();
+    if (image == null || image.isEmpty()) {
+      throw new IllegalArgumentException("이미지 파일은 필수입니다.");
+    }
+
     // camera info
-    ImageMetadata meta = imageMetadataService.extract(request.getImage());
+    ImageMetadata meta = imageMetadataService.extract(image);
 
     // key -> actual image url
-    String imageKey = s3Service.uploadFile(request.getImage());
+    String imageKey = s3Service.uploadFile(image);
     String filterKey = null;
 
     log.info("filterKey : {}", filterKey);
