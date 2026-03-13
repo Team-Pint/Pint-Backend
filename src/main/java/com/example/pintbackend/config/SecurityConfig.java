@@ -47,11 +47,17 @@ public class SecurityConfig {
   @Value("${cors.allowed-origin-patterns}")
   private String allowedOriginPatterns;
 
+  @Value("${server.servlet.session.cookie.secure:true}")
+  private boolean secureCookie;
+
+  @Value("${server.servlet.session.cookie.same-site:None}")
+  private String sameSite;
+
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http
         .csrf(csrf -> csrf
-            .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+            .csrfTokenRepository(csrfTokenRepository())
             .ignoringRequestMatchers(
                 "/auth/login", "/auth/signup", "/auth/signout", "/auth/unique",
                 "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html",
@@ -107,6 +113,17 @@ public class SecurityConfig {
   public AuthenticationManager authenticationManager(
       AuthenticationConfiguration configuration) throws Exception {
     return configuration.getAuthenticationManager();
+  }
+
+  @Bean
+  public CookieCsrfTokenRepository csrfTokenRepository() {
+    CookieCsrfTokenRepository repository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+    repository.setCookieCustomizer(cookie -> cookie
+        .path("/")
+        .secure(secureCookie)
+        .sameSite(sameSite)
+    );
+    return repository;
   }
 
   @Bean
