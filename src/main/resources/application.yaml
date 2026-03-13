@@ -31,8 +31,8 @@ server:
   servlet:
     session:
       cookie:
-        same-site: ${SESSION_COOKIE_SAME_SITE:None}
-        secure: ${SESSION_COOKIE_SECURE:true}
+        same-site: ${SESSION_COOKIE_SAME_SITE:Lax}
+        secure: ${SESSION_COOKIE_SECURE:false}
         http-only: true
 
 cloud:
