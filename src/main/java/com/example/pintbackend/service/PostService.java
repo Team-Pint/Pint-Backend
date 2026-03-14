@@ -29,6 +29,7 @@ import com.example.pintbackend.service.imageservice.ImageMetadata;
 import com.example.pintbackend.service.imageservice.ImageMetadataService;
 import com.example.pintbackend.service.s3service.S3Service;
 import com.example.pintbackend.service.s3service.XmpAnalysisService;
+import org.springframework.util.StringUtils;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -115,11 +116,11 @@ public class PostService {
                         PostImageResponse.from(
                                 post,
                                 postLikeRepository.existsByPostIdAndUserId(post.getId(), userDetails.getUserId()),  // 게시글 좋아요 여부
-                                s3Service.getPresignedUrlToRead(post.getImageFileS3Key()),
+                                resolvePresignedUrl(post.getImageFileS3Key()),
                                 new PostUserInfo(   // 게시글 작성자 정보
                                         post.getUser().getId(),
                                         post.getUser().getUsername(),
-                                        s3Service.getPresignedUrlToRead(post.getUser().getProfileImageS3Key()),
+                                        resolvePresignedUrl(post.getUser().getProfileImageS3Key()),
                                         post.getUser().getId().equals(userDetails.getUserId())
                                 )
                         ))
@@ -148,13 +149,12 @@ public class PostService {
 
         log.info("게시글를 성공적으로 불러왔습니다 {}", postId);
 
-        String imageUrl = s3Service.getPresignedUrlToRead(post.getImageFileS3Key());
+        String imageUrl = resolvePresignedUrl(post.getImageFileS3Key());
 
         String userProfileImageUrl = null;
         if (userDetails.getProfileImageS3Key() != null && !userDetails.getProfileImageS3Key()
                 .isEmpty()) {
-            userProfileImageUrl = s3Service.getPresignedUrlToRead(
-                    userDetails.getProfileImageS3Key());
+            userProfileImageUrl = resolvePresignedUrl(userDetails.getProfileImageS3Key());
         }
 
         XmpAnalysisResponse xmpToJson = null;
@@ -176,6 +176,13 @@ public class PostService {
         int likeCount = postLikeRepository.countByPostId(postId);
 
         return PostResponse.from(post, userInfo, imageUrl, isLiked, likeCount, xmpToJson);
+    }
+
+    private String resolvePresignedUrl(String s3Key) {
+        if (!StringUtils.hasText(s3Key)) {
+            return null;
+        }
+        return s3Service.getPresignedUrlToRead(s3Key);
     }
 
     /**
