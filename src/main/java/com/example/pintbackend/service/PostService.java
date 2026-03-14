@@ -126,7 +126,7 @@ public class PostService {
                         PostImageResponse.from(
                                 post,
                                 postLikeRepository.existsByPostIdAndUserId(post.getId(), userDetails.getUserId()),  // 게시글 좋아요 여부
-                                resolvePresignedUrl(post.getCompressedImageFileS3Key()),
+                                resolvePresignedUrl(post.getCompressedImageFileS3Key() != null ? post.getCompressedImageFileS3Key() : post.getImageFileS3Key()),
                                 new PostUserInfo(   // 게시글 작성자 정보
                                         post.getUser().getId(),
                                         post.getUser().getUsername(),
