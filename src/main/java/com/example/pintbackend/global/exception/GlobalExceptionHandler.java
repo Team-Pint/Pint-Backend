@@ -73,6 +73,12 @@ public class GlobalExceptionHandler {
         .body(BaseResponse.fail(HttpStatus.BAD_REQUEST.value(), e.getMessage()));
   }
 
+  @ExceptionHandler(InvalidSearchKeywordException.class)
+  public ResponseEntity<BaseResponse<Void>> handleInvalidSearchKeyword(InvalidSearchKeywordException e) {
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        .body(BaseResponse.fail(HttpStatus.BAD_REQUEST.value(), e.getMessage()));
+  }
+
   // 중복 처리
   @ExceptionHandler(DataIntegrityViolationException.class)
   public ResponseEntity<BaseResponse<Void>> handleDataIntegrity(DataIntegrityViolationException e) {
