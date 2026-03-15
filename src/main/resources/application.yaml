@@ -15,6 +15,12 @@ spring:
       host: ${REDIS_HOST_NAME}
       port: 6379
 
+  cache:
+    image-presign:
+      s3-key-prefix: s3:presigned-url
+      expiration-minutes: 60
+      redis-ttl-minutes: 55
+
   jpa:
     hibernate:
       ddl-auto: update

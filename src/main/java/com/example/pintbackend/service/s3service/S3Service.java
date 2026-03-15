@@ -13,6 +13,8 @@ package com.example.pintbackend.service.s3service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.util.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -24,22 +26,35 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 
 import java.io.IOException;
-import java.net.URL;
 import java.time.Duration;
-import java.util.Date;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 @Service
 @RequiredArgsConstructor
 public class S3Service {
 
+    private static final Logger log = LoggerFactory.getLogger(S3Service.class);
+
     private final S3Client s3Client;
     private final S3Presigner s3Presigner;
+    private final StringRedisTemplate stringRedisTemplate;
 
     @Value("${cloud.aws.s3.bucket}")
     private String bucket;
+
+    @Value("${spring.cache.image-presign.s3-key-prefix:s3:presigned-url}")
+    private String presignRedisKeyPrefix;
+
+    @Value("${spring.cache.image-presign.expiration-minutes:60}")
+    private long presignExpirationMinutes;
+
+    @Value("${spring.cache.image-presign.redis-ttl-minutes:55}")
+    private long presignRedisTtlMinutes;
 
     /**
      * MultipartFile 이미지 or XMP 파일을 S3에 업로드하고, s3Key 값을 반환한다.
@@ -75,17 +90,65 @@ public class S3Service {
      * 이 URL은 expiration 시점까지만 유효
      */
     public String getPresignedUrlToRead(String path) {
+        String normalizedPath = normalizeImageKey(path);
+        if (!StringUtils.hasText(normalizedPath)) {
+            return null;
+        }
+
+        String redisKey = buildPresignedUrlCacheKey(normalizedPath);
+
+        // 1) Redis 캐시 조회: 값이 있으면 S3 presign를 다시 생성하지 않고 즉시 반환
+        try {
+            String cachedUrl = stringRedisTemplate.opsForValue().get(redisKey);
+            if (cachedUrl != null) {
+                return cachedUrl;
+            }
+        } catch (Exception e) {
+            // Redis 장애가 발생해도 presigned URL 생성은 계속 동작해야 하므로 fallback 처리
+            log.warn("Redis 캐시 조회 실패. Redis 키: {}, 예외: {}", redisKey, e.getMessage());
+        }
+
+        // 2) 캐시 미스: 실제 URL 생성
         GetObjectRequest getObjectRequest = GetObjectRequest.builder()
                 .bucket(bucket)
-                .key(path)
+                .key(normalizedPath)
                 .build();
 
         GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
-                .signatureDuration(Duration.ofHours(1))
+                .signatureDuration(Duration.ofMinutes(presignExpirationMinutes))
                 .getObjectRequest(getObjectRequest)
                 .build();
 
-        return s3Presigner.presignGetObject(presignRequest).url().toString();
+        String presignedUrl = s3Presigner.presignGetObject(presignRequest).url().toString();
+
+        // 3) 캐시 저장: URL 만료 직전에 Redis가 먼저 만료되도록 보수적으로 TTL을 짧게 둠
+        try {
+            stringRedisTemplate.opsForValue().set(redisKey, presignedUrl, presignRedisTtlMinutes, TimeUnit.MINUTES);
+        } catch (Exception e) {
+            log.warn("Redis 캐시 저장 실패. Redis 키: {}, 예외: {}", redisKey, e.getMessage());
+        }
+
+        return presignedUrl;
+    }
+
+    /**
+     * Redis에 사용할 presigned URL 캐시 key를 생성한다.
+     * imageKey 전체를 key로 직접 쓰지 않고 prefix를 붙여 충돌 위험을 낮춘다.
+     */
+    private String buildPresignedUrlCacheKey(String path) {
+        return presignRedisKeyPrefix + ":" + path;
+    }
+
+    /**
+     * ImageKey를 캐시 key로 사용하기 전에 방어적으로 정규화한다.
+     * - null/blank는 null 반환
+     * - 양끝 공백만 제거
+     */
+    private String normalizeImageKey(String path) {
+        if (!StringUtils.hasText(path)) {
+            return null;
+        }
+        return path.trim();
     }
 
     /**
