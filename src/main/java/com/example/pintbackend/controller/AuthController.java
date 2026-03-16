@@ -8,6 +8,7 @@ import com.example.pintbackend.dto.user.response.CheckDuplicateEmailResponse;
 import com.example.pintbackend.dto.common.response.BaseResponse;
 import com.example.pintbackend.dto.user.request.CreateUserRequest;
 import com.example.pintbackend.dto.user.response.LoginUserResponse;
+import com.example.pintbackend.dto.user.response.CsrfTokenResponse;
 import com.example.pintbackend.service.PostService;
 import com.example.pintbackend.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -26,6 +27,9 @@ import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -42,6 +46,7 @@ public class AuthController {
 
     private final UserService userService;
     private final PostService postService;
+    private final CsrfTokenRepository csrfTokenRepository;
 
     @PostMapping("/signup")
     @Operation(
@@ -112,5 +117,34 @@ public class AuthController {
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noCache().mustRevalidate())
                 .body(BaseResponse.success(response));
+    }
+
+    @GetMapping("/csrf-token")
+    @Operation(
+            summary = "CSRF 토큰 조회",
+            description = "쿠키 XSRF-TOKEN와 동일한 raw CSRF 토큰을 조회합니다."
+    )
+    public ResponseEntity<BaseResponse<CsrfTokenResponse>> getCsrfToken(
+            @Parameter(hidden = true) HttpServletRequest request,
+            @Parameter(hidden = true) HttpServletResponse response
+    ) {
+        // SecurityContext/CSRF Filter에서 토큰을 이미 생성한 경우 요청 속성에서 가져옴
+        CsrfToken csrfToken = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
+
+        // 만약 요청 속성에 아직 없으면 직접 생성 후 쿠키에 저장
+        // 이렇게 하면 /auth/** 경로에서도 항상 같은 소스의 raw 토큰을 반환할 수 있음
+        if (csrfToken == null) {
+            csrfToken = csrfTokenRepository.generateToken(request);
+            if (csrfToken != null) {
+                csrfTokenRepository.saveToken(csrfToken, request, response);
+                request.setAttribute(CsrfToken.class.getName(), csrfToken);
+            }
+        }
+
+        if (csrfToken == null) {
+            throw new IllegalStateException("CSRF 토큰을 생성할 수 없습니다.");
+        }
+
+        return ResponseEntity.ok(BaseResponse.success(new CsrfTokenResponse(csrfToken.getToken())));
     }
 }

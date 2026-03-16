@@ -28,6 +28,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.session.SessionInformationExpiredStrategy;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -56,11 +57,7 @@ public class SecurityConfig {
         requestHandler.setCsrfRequestAttributeName(null); // Spring Security 5의 기본 토큰 해석 방식 유지 (React와 가장 협업하기 좋음)
 
         // 배포 환경(Cross-Site)을 위한 CSRF 쿠키 설정 커스텀
-        CookieCsrfTokenRepository csrfRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
-        csrfRepository.setCookieCustomizer(customizer -> customizer
-                .sameSite("None")   // Vercel, 서버 도메인 정보가 다르므로, None
-                .secure(true) // HTTPS 적용 시 true
-        );
+        CsrfTokenRepository csrfRepository = csrfTokenRepository();
 
         http
                 // 1. CORS 설정
@@ -119,6 +116,17 @@ public class SecurityConfig {
                 );
 
         return http.build();
+    }
+
+    @Bean
+    public CsrfTokenRepository csrfTokenRepository() {
+        CookieCsrfTokenRepository csrfRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        csrfRepository.setCookieCustomizer(customizer -> customizer
+                .sameSite("None")   // Vercel, 서버 도메인 정보가 다르므로, None
+                .secure(true) // HTTPS 적용 시 true
+        );
+
+        return csrfRepository;
     }
 
     @Bean
@@ -208,5 +216,4 @@ public class SecurityConfig {
         }
     }
 }
-
 
