@@ -120,7 +120,7 @@ public class PostService {
     public GetAllPostResponse getAllPost(CustomUserDetails userDetails, Pageable pageable) {
 
         // Query 1: SELECT * FROM posts LIMIT 10
-        Page<Post> posts = postRepository.findAll(pageable);
+        Page<Post> posts = postRepository.findAllWithUser(pageable);
 
         List<PostImageResponse> content = posts.getContent().stream()
                 .map(post ->
