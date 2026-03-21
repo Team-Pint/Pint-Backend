@@ -35,8 +35,8 @@ import org.springframework.util.StringUtils;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -118,8 +118,8 @@ public class PostService {
      */
     public GetAllPostResponse getAllPost(CustomUserDetails userDetails, Pageable pageable) {
 
-        // Query 1: SELECT * FROM posts LIMIT 10
-        Page<Post> posts = postRepository.findAll(pageable);
+        // Query 1: SELECT * FROM posts ORDER BY created_at DESC LIMIT size + 1
+        Slice<Post> posts = postRepository.findAllByOrderByCreatedAtDesc(pageable);
 
         List<PostImageResponse> content = posts.getContent().stream()
                 .map(post ->
@@ -141,8 +141,6 @@ public class PostService {
                 content,
                 posts.getNumber(),
                 posts.getSize(),
-                posts.getTotalElements(),
-                posts.getTotalPages(),
                 posts.hasNext(),
                 posts.hasPrevious(),
                 posts.isFirst(),
