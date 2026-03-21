@@ -117,8 +117,8 @@ public class PostService {
      */
     public GetAllPostResponse getAllPost(CustomUserDetails userDetails, Pageable pageable) {
 
-        // Query 1: SELECT * FROM posts ORDER BY created_at DESC LIMIT size + 1
-        Slice<Post> posts = postRepository.findAllByOrderByCreatedAtDesc(pageable);
+        // Query 1: SELECT p.*, u.* FROM posts p JOIN users u ON p.user_id = u.id ORDER BY p.created_at DESC LIMIT size + 1
+        Slice<Post> posts = postRepository.findAllWithUser(pageable);
 
         List<PostImageResponse> content = posts.getContent().stream()
                 .map(post ->
