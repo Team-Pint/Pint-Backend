@@ -15,7 +15,7 @@ public record PostImageResponse(
         PostUserInfo userInfo
 ) {
 
-    public static PostImageResponse from(Post post, boolean isLiked, String imageUrl, PostUserInfo userInfo) {
+    public static PostImageResponse from(Post post, int likeCount, boolean isLiked, String imageUrl, PostUserInfo userInfo) {
         return new PostImageResponse(
                 post.getId(),
                 post.getHeight(),
@@ -23,7 +23,7 @@ public record PostImageResponse(
                 imageUrl,
                 post.getCamera(),
                 post.getLocation(),
-                post.getLikes().size(),
+                likeCount,
                 isLiked,
                 userInfo
         );

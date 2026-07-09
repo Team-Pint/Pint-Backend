@@ -29,4 +29,19 @@ public interface PostLikeRepository extends JpaRepository<PostLike, Long> {
             """)
     List<Post> findAllLikedPostByUserId(@Param("userId") Long userId);
 
+    // 주어진 게시글들 중 이 유저가 좋아요한 게시글 ID들 (배치 조회)
+    @Query("""
+            SELECT pl.post.id FROM PostLike pl
+            WHERE pl.post.id IN :postIds AND pl.user.id = :userId
+            """)
+    Set<Long> findLikedPostIdsByUser(@Param("postIds") List<Long> postIds, @Param("userId") Long userId);
+
+    // 게시글별 좋아요 개수 (배치 조회)
+    @Query("""
+            SELECT pl.post.id, COUNT(pl) FROM PostLike pl
+            WHERE pl.post.id IN :postIds
+            GROUP BY pl.post.id
+            """)
+    List<Object[]> countByPostIds(@Param("postIds") List<Long> postIds);
+
 }

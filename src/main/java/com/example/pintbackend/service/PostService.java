@@ -43,6 +43,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -120,18 +123,36 @@ public class PostService {
         // Query 1: SELECT p.*, u.* FROM posts p JOIN users u ON p.user_id = u.id ORDER BY p.created_at DESC LIMIT size + 1
         Slice<Post> posts = postRepository.findAllWithUser(pageable);
 
+        // 현재 페이지네이션으로 불러온 게시글 ID 목록
+        List<Long> postIds = posts.getContent().stream()
+                .map(Post::getId)
+                .toList();
+
+        // Query 2: 이 유저가 좋아요한 게시글 ID들을 한 번에 조회
+        Set<Long> likedPostIds = postIds.isEmpty()
+                ? Set.of()
+                : postLikeRepository.findLikedPostIdsByUser(postIds, userDetails.getUserId());
+                // 현재 유저가 좋아요를 하고 있는 게시글의 목록을 가져온다.
+
+        // Query 3: 게시글별 좋아요 개수를 한 번에 조회
+        // Map = [Key = 게시글 ID, Value = 좋아요 개수]
+        Map<Long, Long> likeCountMap = postIds.isEmpty()
+                ? Map.of()
+                : postLikeRepository.countByPostIds(postIds).stream()
+                        .collect(Collectors.toMap(row -> (Long) row[0], row -> (Long) row[1]));
+
         List<PostImageResponse> content = posts.getContent().stream()
                 .map(post ->
                         PostImageResponse.from(
                                 post,
-                                // Query 2~10: SELECT 1 FROM post_like WHERE post_id=1 AND user_id=5
-                                postLikeRepository.existsByPostIdAndUserId(post.getId(), userDetails.getUserId()),  // 게시글 좋아요 여부
+                                likeCountMap.getOrDefault(post.getId(), 0L).intValue(),  // 게시글 좋아요 개수
+                                likedPostIds.contains(post.getId()),  // 게시글 좋아요 여부
                                 resolvePresignedUrl(post.getCompressedImageFileS3Key() != null ? post.getCompressedImageFileS3Key() : post.getImageFileS3Key()),
-                                new PostUserInfo(   // 게시글 작성자 정보
-                                        post.getUser().getId(),     // LAZY 로딩 트리거
-                                        post.getUser().getUsername(),   // more queries
+                                new PostUserInfo(   // 게시글 작성자 정보 (JOIN FETCH로 이미 로딩됨)
+                                        post.getUser().getId(),
+                                        post.getUser().getUsername(),
                                         resolvePresignedUrl(post.getUser().getProfileImageS3Key()),
-                                        post.getUser().getId().equals(userDetails.getUserId())      // more queries
+                                        post.getUser().getId().equals(userDetails.getUserId())
                                 )
                         ))
                 .toList();
